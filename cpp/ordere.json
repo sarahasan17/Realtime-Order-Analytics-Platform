@@ -1,0 +1,14 @@
+[
+    {
+        "user": "Sara",
+        "item": "Laptop",
+        "amount": 1200,
+        "orderDate": "2026-02-22T19:30:00Z"
+    },
+    {
+        "user": "Sara",
+        "item": "Phone",
+        "amount": 800,
+        "orderDate": "2026-02-22T19:31:00Z"
+    }
+]

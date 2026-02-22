@@ -8,6 +8,7 @@ services:
       KAFKA_CLUSTER_ID: "q1w2e3r4t5y6u7i8o9p0abcd"
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -37,3 +38,22 @@ services:
       - ./cpp:/app
     working_dir: /app
     command: sleep infinity
+  analytics:
+    build: ./analytics-service
+    container_name: analytics
+    depends_on:
+      - kafka
+      - mongo
+    ports:
+      - "9001:9001"
+    working_dir: /app
+    command: ["node", "analytics.js"]
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+volumes:
+  mongo-data:
