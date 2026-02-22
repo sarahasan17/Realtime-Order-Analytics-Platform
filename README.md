@@ -13,11 +13,11 @@ featuring live analytics and interactive visualizations.
 <p>This project demonstrates a complete end-to-end <b>event-driven architecture</b>:</p>
 
 <ul>
-  <li>📤 <b>C++ Producer</b> generates order events</li>
-  <li>📡 <b>Apache Kafka</b> streams events</li>
-  <li>⚙️ <b>Node.js Analytics Service</b> consumes events</li>
-  <li>🗄 <b>MongoDB</b> stores processed data</li>
-  <li>📊 <b>Live Dashboard</b> visualizes insights</li>
+  <li> <b>C++ Producer</b> generates order events</li>
+  <li> <b>Apache Kafka</b> streams events</li>
+  <li><b>Node.js Analytics Service</b> consumes events</li>
+  <li><b>MongoDB</b> stores processed data</li>
+  <li><b>Live Dashboard</b> visualizes insights</li>
 </ul>
 
 <p>The system simulates a production-grade scalable event processing pipeline.</p>
@@ -50,27 +50,27 @@ C++ Producer → Kafka Topic → Node.js Consumer → MongoDB → Dashboard UI
     <th>Technology</th>
   </tr>
   <tr>
-    <td>🔄 Streaming</td>
+    <td> Streaming</td>
     <td>Apache Kafka (KRaft mode)</td>
   </tr>
   <tr>
-    <td>⚙️ Backend</td>
+    <td> Backend</td>
     <td>Node.js + Express</td>
   </tr>
   <tr>
-    <td>🗄 Database</td>
+    <td> Database</td>
     <td>MongoDB</td>
   </tr>
   <tr>
-    <td>📤 Producer</td>
+    <td> Producer</td>
     <td>C++</td>
   </tr>
   <tr>
-    <td>📊 Visualization</td>
+    <td> Visualization</td>
     <td>Chart.js</td>
   </tr>
   <tr>
-    <td>🐳 Containerization</td>
+    <td> Containerization</td>
     <td>Docker & Docker Compose</td>
   </tr>
 </table>
@@ -145,13 +145,13 @@ docker compose up --build -d
 <h2>📊 Dashboard Features</h2>
 
 <ul>
-  <li>🔢 Total Orders KPI</li>
-  <li>💰 Total Revenue KPI</li>
-  <li>📈 Revenue Trend (Line Chart)</li>
-  <li>🥧 Status Distribution (Pie Chart)</li>
-  <li>📊 Orders Per Customer (Bar Chart)</li>
-  <li>📋 Recent Orders Table</li>
-  <li>🔄 Auto-refresh every 10 seconds</li>
+  <li> Total Orders KPI</li>
+  <li> Total Revenue KPI</li>
+  <li> Revenue Trend (Line Chart)</li>
+  <li> Status Distribution (Pie Chart)</li>
+  <li> Orders Per Customer (Bar Chart)</li>
+  <li> Recent Orders Table</li>
+  <li> Auto-refresh every 10 seconds</li>
 </ul>
 
 <hr/>
@@ -233,3 +233,4 @@ docker compose up --build -d
 <p align="center">
 ⭐ If you found this project helpful, consider giving it a star!
 </p>
+
