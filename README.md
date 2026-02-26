@@ -1,4 +1,4 @@
-<h1 align="center">🚀 Real-Time Order Analytics Platform</h1>
+<h1 align="center">🚀 OrderStream: Real-Time Order Analytics Platform</h1>
 
 <p align="center">
 A fully containerized real-time data pipeline built using 
@@ -233,4 +233,5 @@ docker compose up --build -d
 <p align="center">
 ⭐ If you found this project helpful, consider giving it a star!
 </p>
+
 
