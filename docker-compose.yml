@@ -40,12 +40,11 @@ services:
     command: sleep infinity
   analytics:
     build: ./analytics-service
-    container_name: analytics
     depends_on:
       - kafka
       - mongo
     ports:
-      - "9001:9001"
+    - "9001:9001" 
     working_dir: /app
     command: ["node", "analytics.js"]
   mongo:

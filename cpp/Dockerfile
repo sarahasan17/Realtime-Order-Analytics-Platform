@@ -5,5 +5,7 @@ RUN apt-get update && apt-get install -y \
     librdkafka-dev \
     nlohmann-json3-dev \
     && rm -rf /var/lib/apt/lists/*
+    
+COPY orders.json .
 
 WORKDIR /app

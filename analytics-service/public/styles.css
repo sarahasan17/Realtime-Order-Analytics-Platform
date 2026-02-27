@@ -44,6 +44,27 @@ header h1 {
   -webkit-text-fill-color: transparent;
 }
 
+.reset-button {
+  padding: 12px 22px;
+  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+}
+
+.reset-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+}
+
+.reset-button:active {
+  transform: scale(0.96);
+}
+
 .subtitle {
   margin-top: 10px;
   color: #94a3b8;

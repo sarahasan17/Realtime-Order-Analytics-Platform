@@ -1,128 +1,144 @@
 let revenueChart, statusChart, customerChart;
 
-/* ============================= */
-/* KPI + TABLE RENDERING */
-/* ============================= */
+document.addEventListener("DOMContentLoaded", function () {
+  async function fetchData() {
+    try {
+      const res = await fetch("/orders");
+      const data = await res.json();
+      updateDashboard(data);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  }
 
-function renderKPIs(data) {
-  let totalOrders = data.length;
-  let totalRevenue = 0;
-  let shipped = 0;
-  let failed = 0;
+  function updateDashboard(data) {
+    if (!Array.isArray(data)) return;
 
-  data.forEach((order) => {
-    totalRevenue += order.amount;
-    if (order.status === "SHIPPED") shipped++;
-    if (order.status === "FAILED") failed++;
-  });
+    let totalOrders = data.length;
+    let totalRevenue = 0;
 
-  document.getElementById("totalOrders").textContent = totalOrders;
-  document.getElementById("totalRevenue").textContent =
-    "₹" + totalRevenue.toFixed(2);
-  const shippedEl = document.getElementById("shippedCount");
-  const failedEl = document.getElementById("failedCount");
+    let revenueByTime = {};
+    let statusCount = {};
+    let customerCount = {};
 
-  if (shippedEl) shippedEl.textContent = shipped;
-  if (failedEl) failedEl.textContent = failed;
-}
+    data.forEach((order) => {
+      totalRevenue += order.amount;
 
-function renderTable(data) {
-  const table = document.getElementById("ordersTable");
-  table.innerHTML = "";
+      const date = new Date(order.timestamp).toLocaleDateString();
+      revenueByTime[date] = (revenueByTime[date] || 0) + order.amount;
 
-  data.slice(0, 10).forEach((order) => {
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-      <td>${order.orderId}</td>
-      <td>${order.customer}</td>
-      <td>₹${order.amount}</td>
-      <td>${order.status}</td>
-      <td>${new Date(order.timestamp * 1000).toLocaleTimeString()}</td>
-    `;
-
-    table.appendChild(row);
-  });
-}
-
-/* ============================= */
-/* CHART LOGIC */
-/* ============================= */
-
-function processAnalytics(data) {
-  let revenueOverTime = {};
-  let statusCount = {};
-  let customerCount = {};
-
-  data.forEach((order) => {
-    const time = new Date(order.timestamp * 1000).toLocaleTimeString();
-    revenueOverTime[time] = (revenueOverTime[time] || 0) + order.amount;
-    statusCount[order.status] = (statusCount[order.status] || 0) + 1;
-    customerCount[order.customer] = (customerCount[order.customer] || 0) + 1;
-  });
-
-  updateCharts(revenueOverTime, statusCount, customerCount);
-}
-
-function updateCharts(revenueData, statusData, customerData) {
-  if (revenueChart) revenueChart.destroy();
-  if (statusChart) statusChart.destroy();
-  if (customerChart) customerChart.destroy();
-
-  revenueChart = new Chart(document.getElementById("revenueChart"), {
-    type: "line",
-    data: {
-      labels: Object.keys(revenueData),
-      datasets: [
-        {
-          label: "Revenue",
-          data: Object.values(revenueData),
-          borderWidth: 2,
-          tension: 0.3,
-        },
-      ],
-    },
-  });
-
-  statusChart = new Chart(document.getElementById("statusChart"), {
-    type: "pie",
-    data: {
-      labels: Object.keys(statusData),
-      datasets: [
-        {
-          data: Object.values(statusData),
-        },
-      ],
-    },
-  });
-
-  customerChart = new Chart(document.getElementById("customerChart"), {
-    type: "bar",
-    data: {
-      labels: Object.keys(customerData),
-      datasets: [
-        {
-          label: "Orders",
-          data: Object.values(customerData),
-        },
-      ],
-    },
-  });
-}
-
-/* ============================= */
-/* LOAD DATA */
-/* ============================= */
-
-function loadData() {
-  fetch("/orders")
-    .then((res) => res.json())
-    .then((data) => {
-      renderKPIs(data);
-      renderTable(data);
-      processAnalytics(data);
+      statusCount[order.status] = (statusCount[order.status] || 0) + 1;
+      customerCount[order.customer] = (customerCount[order.customer] || 0) + 1;
     });
-}
 
-loadData();
-setInterval(loadData, 10000);
+    document.getElementById("totalOrders").innerText = totalOrders;
+    document.getElementById("totalRevenue").innerText = totalRevenue;
+
+    renderCharts(revenueByTime, statusCount, customerCount);
+    renderTable(data);
+  }
+
+  function renderCharts(revenueByTime, statusCount, customerCount) {
+    if (revenueChart) revenueChart.destroy();
+    if (statusChart) statusChart.destroy();
+    if (customerChart) customerChart.destroy();
+
+    revenueChart = new Chart(document.getElementById("revenueChart"), {
+      type: "line",
+      data: {
+        labels: Object.keys(revenueByTime),
+        datasets: [
+          {
+            label: "Revenue",
+            data: Object.values(revenueByTime),
+            borderColor: "#38bdf8",
+            fill: false,
+          },
+        ],
+      },
+    });
+
+    statusChart = new Chart(document.getElementById("statusChart"), {
+      type: "pie",
+      data: {
+        labels: Object.keys(statusCount),
+        datasets: [
+          {
+            data: Object.values(statusCount),
+          },
+        ],
+      },
+    });
+
+    customerChart = new Chart(document.getElementById("customerChart"), {
+      type: "bar",
+      data: {
+        labels: Object.keys(customerCount),
+        datasets: [
+          {
+            label: "Orders",
+            data: Object.values(customerCount),
+            backgroundColor: "#6366f1",
+          },
+        ],
+      },
+    });
+  }
+
+  function renderTable(data) {
+    const tbody = document.getElementById("ordersTableBody");
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4">No orders available</td>
+        </tr>
+      `;
+      return;
+    }
+
+    data
+      .slice(-10)
+      .reverse()
+      .forEach((order) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+        <td>${order.orderId}</td>
+        <td>${order.customer}</td>
+        <td>${order.amount}</td>
+        <td>
+          <span class="status ${order.status}">
+            ${order.status}
+          </span>
+        </td>
+      `;
+
+        tbody.appendChild(row);
+      });
+  }
+
+  function clearDashboard() {
+    document.getElementById("totalOrders").innerText = 0;
+    document.getElementById("totalRevenue").innerText = 0;
+
+    if (revenueChart) revenueChart.destroy();
+    if (statusChart) statusChart.destroy();
+    if (customerChart) customerChart.destroy();
+
+    document.getElementById("ordersTableBody").innerHTML = "";
+  }
+
+  document.getElementById("resetBtn").addEventListener("click", async () => {
+    if (!confirm("Are you sure?")) return;
+
+    await fetch("/reset", { method: "DELETE" });
+    clearDashboard();
+  });
+
+  // Auto refresh every 10 seconds
+  setInterval(fetchData, 10000);
+
+  fetchData();
+});

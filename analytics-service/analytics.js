@@ -1,82 +1,127 @@
 const express = require("express");
+const { MongoClient } = require("mongodb");
 const { Kafka } = require("kafkajs");
-const mongoose = require("mongoose");
 const path = require("path");
 
 const app = express();
 const PORT = 9001;
 
-/* ============================= */
-/* STATIC FILES */
-/* ============================= */
+/* =============================
+   MONGODB CONFIG
+============================= */
 
-app.use(express.static(path.join(__dirname, "public")));
+const mongoUrl = "mongodb://mongo:27017";
+const client = new MongoClient(mongoUrl);
 
-/* ============================= */
-/* MONGODB CONNECTION */
-/* ============================= */
+let db;
 
-mongoose
-  .connect("mongodb://mongo:27017/ordersDB")
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("Mongo Error:", err));
-
-const orderSchema = new mongoose.Schema({
-  orderId: Number,
-  customer: String,
-  amount: Number,
-  currency: String,
-  status: String,
-  timestamp: Number,
-});
-
-const Order = mongoose.model("Order", orderSchema);
-
-/* ============================= */
-/* KAFKA CONSUMER */
-/* ============================= */
+/* =============================
+   KAFKA CONFIG
+============================= */
 
 const kafka = new Kafka({
   clientId: "analytics-service",
   brokers: ["kafka:9092"],
 });
 
-const consumer = kafka.consumer({ groupId: "analytics-group" });
+// 🔥 SAME GROUP ID (important for scaling)
+const consumer = kafka.consumer({
+  groupId: "analytics-group",
+});
 
-async function runConsumer() {
-  await consumer.connect();
-  await consumer.subscribe({ topic: "orders", fromBeginning: true });
+/* =============================
+   START EVERYTHING
+============================= */
 
-  await consumer.run({
-    eachMessage: async ({ message }) => {
+async function startServer() {
+  try {
+    // Connect MongoDB
+    await client.connect();
+    db = client.db("ordersDB");
+    console.log("✅ Connected to MongoDB");
+
+    await db.collection("orders").createIndex({ orderId: 1 }, { unique: true });
+
+    // 🔥 Start Express immediately
+    app.use(express.static(path.join(__dirname, "public")));
+    app.use(express.json());
+
+    app.get("/orders", async (req, res) => {
       try {
-        const order = JSON.parse(message.value.toString());
+        const orders = await db
+          .collection("orders")
+          .find({})
+          .sort({ timestamp: 1 })
+          .toArray();
 
-        await Order.create(order);
-
-        console.log("Stored:", order);
+        res.json(orders);
       } catch (err) {
-        console.error("Consumer Error:", err);
+        res.status(500).json({ error: "Failed to fetch orders" });
       }
-    },
-  });
+    });
+
+    app.delete("/reset", async (req, res) => {
+      try {
+        await db.collection("orders").deleteMany({});
+        res.json({ message: "All data cleared" });
+      } catch (err) {
+        res.status(500).json({ error: "Reset failed" });
+      }
+    });
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Analytics Service running on port ${PORT}`);
+    });
+
+    // 🔥 Start Kafka consumer in background
+    startKafkaConsumer();
+  } catch (error) {
+    console.error("❌ Startup failed:", error);
+  }
 }
 
-runConsumer();
+async function startKafkaConsumer() {
+  while (true) {
+    try {
+      console.log("⏳ Trying to connect to Kafka...");
 
-/* ============================= */
-/* API ROUTE */
-/* ============================= */
+      await consumer.connect();
 
-app.get("/orders", async (req, res) => {
-  const data = await Order.find().sort({ orderId: -1 });
-  res.json(data);
-});
+      await consumer.subscribe({
+        topic: "orders",
+        fromBeginning: true,
+      });
 
-/* ============================= */
-/* START SERVER */
-/* ============================= */
+      console.log("✅ Kafka Consumer connected & subscribed");
 
-app.listen(PORT, () => {
-  console.log(`Dashboard: http://localhost:${PORT}/dashboard.html`);
-});
+      await consumer.run({
+        eachMessage: async ({ topic, partition, message }) => {
+          try {
+            const order = JSON.parse(message.value.toString());
+
+            await db
+              .collection("orders")
+              .updateOne(
+                { orderId: order.orderId },
+                { $set: order },
+                { upsert: true },
+              );
+
+            console.log(
+              `📥 Stored order ${order.orderId} from partition ${partition}`,
+            );
+          } catch (err) {
+            console.error("❌ Error processing message:", err);
+          }
+        },
+      });
+
+      break; // exit retry loop if successful
+    } catch (err) {
+      console.error("❌ Kafka not ready. Retrying in 5 seconds...");
+      await new Promise((res) => setTimeout(res, 5000));
+    }
+  }
+}
+
+startServer();
